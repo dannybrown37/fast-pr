@@ -1,7 +1,7 @@
 {
   "name": "fast-pr",
-  "version": "0.0.13",
-  "description": "Open a fast PR from your command line",
+  "version": "0.0.1",
+  "description": "Open a fast PR from your terminal",
   "bin": {
     "fast-pr": "./src/fast-pr.sh"
   },
