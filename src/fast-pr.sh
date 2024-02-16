@@ -2,15 +2,10 @@
 
 
 # Opens a pull request from current branch to default branch in repo
-# Works with GitHub and enterprise Bitbucket
-
-# To install, update your PATH in your .bashrc file, then source it:
-#   export PATH="$HOME/path/to/script_dir:$PATH"
-#   source ~/.bashrc
-
-# To use, enter your BITBUCKET_TOKEN and BITBUCKET_BASE_URL in your
-# environment, then just enter `pr` after pushing a branch up.
-
+# Works with:
+#   GitHub
+#   Bitbucket (enterprise)
+#   ...
 
 pr() {
 
@@ -91,11 +86,36 @@ pr() {
 
     fi
 
-    curl -X POST \
-         -H "Authorization: Bearer $token" \
-         -H "$data_type_header" \
-         -d @temp_pr.json \
-         "$url"
+    response=$(
+        curl -X POST \
+        -H "Authorization: Bearer $token" \
+        -H "$data_type_header" \
+        -d @temp_pr.json \
+        -s \
+        "$url"
+    )
 
     rm -f temp_pr.json
+
+    pr_url=$(echo "$response" | jq -r '.html_url')
+    echo "Opening: $pr_url"
+
+    # get open browser command
+    case $( uname -s ) in
+    Darwin)   open='open';;
+    MINGW*)   open='start';;
+    MSYS*)    open='start';;
+    CYGWIN*)  open='cygstart';;
+    *)        # Try to detect WSL (Windows Subsystem for Linux)
+        if uname -r | grep -q -i microsoft; then
+        open='powershell.exe -NoProfile Start'
+        else
+        open='xdg-open'
+        fi;;
+    esac
+
+    ${BROWSER:-$open} "$pr_url"
+
 }
+
+pr
