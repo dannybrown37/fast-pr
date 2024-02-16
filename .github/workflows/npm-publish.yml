@@ -27,7 +27,7 @@ jobs:
         run: echo "Bumped to version ${{ steps.cz.outputs.version }}"
 
   publish-npm:
-    needs: build
+    needs: version-bump
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
