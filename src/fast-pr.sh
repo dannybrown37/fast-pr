@@ -11,8 +11,10 @@ pr() {
 
     if git remote -v | grep -q "bitbucket"; then
         repo_home="bitbucket"
-        if [[ -z $BITBUCKET_TOKEN || -z $BITBUCKET_BASE_URL ]]; then
-            echo "Error: You must set your BITBUCKET_TOKEN and BITBUCKET_BASE_URL in the environment"
+        if [[ -z $BITBUCKET_TOKEN ]]; then
+            echo "Error: You must set your BITBUCKET_TOKEN in the environment:"
+            echo "export BITBUCKET_TOKEN=abcd"
+            echo "If you are using enterprise Bitbucket, you must also set your BITBUCKET_BASE_URL"
             echo "Hint: The base URL should end with \".com\", the rest will be constructed in-script"
             return
         fi
@@ -50,23 +52,42 @@ pr() {
 
     if [ $repo_home = "bitbucket" ]; then
 
-        json_content="{
-            \"title\": \"$pull_request_title\",
-            \"description\": \"$commit_message\",
-            \"fromRef\": {
-                \"id\": \"refs/heads/$current_branch\",
-                \"repository\": \"$repo_name\",
-                \"project\": {\"key\": \"$repo_parent\"}
-            },
-            \"toRef\": {
-                \"id\": \"refs/heads/$default_branch\",
-                \"repository\": \"$repo_name\",
-                \"project\": {\"key\": \"$repo_parent\"}
-            }
-        }"
+        if [[ -z $BITBUCKET_BASE_URL ]]; then
+            json_content="{
+                \"title\": \"$pull_request_title\",
+                \"description\": \"$commit_message\",
+                \"source\": {
+                    \"branch\": {
+                        \"name\": \"$current_branch\"
+                    }
+                },
+                \"destination\": {
+                    \"branch\": {
+                        \"name\": \"$default_branch\"
+                    }
+                }
+            }"
+            url="https://api.bitbucket.org/2.0/repositories/$repo_parent/$repo_name/pullrequests"
+        else
+            json_content="{
+                \"title\": \"$pull_request_title\",
+                \"description\": \"$commit_message\",
+                \"fromRef\": {
+                    \"id\": \"refs/heads/$current_branch\",
+                    \"repository\": \"$repo_name\",
+                    \"project\": {\"key\": \"$repo_parent\"}
+                },
+                \"toRef\": {
+                    \"id\": \"refs/heads/$default_branch\",
+                    \"repository\": \"$repo_name\",
+                    \"project\": {\"key\": \"$repo_parent\"}
+                }
+            }"
+            url="$BITBUCKET_BASE_URL/rest/api/1.0/projects/$repo_parent/repos/$repo_name/pull-requests"
+        fi
+
         echo "$json_content" > temp_pr.json
 
-        url="$BITBUCKET_BASE_URL/rest/api/1.0/projects/$repo_parent/repos/$repo_name/pull-requests"
         data_type_header="Content-Type: application/json"
         token=$BITBUCKET_TOKEN
 
@@ -81,6 +102,7 @@ pr() {
         echo "$json_content" > temp_pr.json
 
         url="https://api.github.com/repos/$repo_parent/$repo_name/pulls"
+
         data_type_header="Accept: application/vnd.github.v3+json"
         token=$GITHUB_TOKEN
 
@@ -95,9 +117,15 @@ pr() {
         "$url"
     )
 
-    rm -f temp_pr.json
+    echo $response
 
-    pr_url=$(echo "$response" | jq -r '.html_url')
+    rm -f temp_pr.json
+    if [ $repo_home = "bitbucket" ]; then
+        pr_url=$(echo "$response" | jq -r '.links.html.href')
+    elif [ $repo_home = "github" ]; then
+        pr_url=$(echo "$response" | jq -r '.html_url')
+    fi
+
     echo "Opening: $pr_url"
 
     # get open browser command
