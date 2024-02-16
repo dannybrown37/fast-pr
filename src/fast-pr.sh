@@ -94,3 +94,5 @@ pr() {
 
     rm -f temp_pr.json
 }
+
+pr
