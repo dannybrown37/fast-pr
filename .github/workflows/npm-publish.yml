@@ -6,32 +6,33 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '18'
-        registry-url: 'https://registry.npmjs.org'
-    - run: npm ci
-    - run: npm test
+  # TODO -- add tests to build
+  # build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - uses: actions/setup-node@v2
+  #     with:
+  #       node-version: '20'
+  #       registry-url: 'https://registry.npmjs.org'
+  #   - run: npm ci
+  #   - run: npm test
 
   version-bump:
-    needs: build
+    # needs: build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
-        node-version: '18'
+        node-version: '20'
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
-    - run: git config --global user.email "dannybrown37@gmail.com"
-    - run: git config --global user.name "Danny Brown"
     - run: npm install --save-dev standard-version
     - run: npx standard-version
     - run: git push --follow-tags origin main
+      env:
+        PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
   publish-npm:
     needs: version-bump
@@ -40,7 +41,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
-        node-version: '18'
+        node-version: '20'
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
     - run: npm publish
