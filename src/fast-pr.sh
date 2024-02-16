@@ -100,12 +100,21 @@ pr() {
     pr_url=$(echo "$response" | jq -r '.html_url')
     echo "Opening: $pr_url"
 
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        xdg-open "$pr_url"
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        open "$pr_url"
-    fi
+    # get open browser command
+    case $( uname -s ) in
+    Darwin)   open='open';;
+    MINGW*)   open='start';;
+    MSYS*)    open='start';;
+    CYGWIN*)  open='cygstart';;
+    *)        # Try to detect WSL (Windows Subsystem for Linux)
+        if uname -r | grep -q -i microsoft; then
+        open='powershell.exe -NoProfile Start'
+        else
+        open='xdg-open'
+        fi;;
+    esac
 
+    ${BROWSER:-$open} "$pr_url"
 
 }
 
