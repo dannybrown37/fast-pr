@@ -86,13 +86,20 @@ pr() {
 
     fi
 
-    curl -X POST \
-         -H "Authorization: Bearer $token" \
-         -H "$data_type_header" \
-         -d @temp_pr.json \
-         "$url"
+    response=$(
+        curl -X POST \
+        -H "Authorization: Bearer $token" \
+        -H "$data_type_header" \
+        -d @temp_pr.json \
+        "$url"
+    )
 
     rm -f temp_pr.json
+
+    pr_url=$(echo "$response" | jq -r '.html_url')
+    echo $pr_url
+
+
 }
 
 pr
