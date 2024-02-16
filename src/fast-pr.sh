@@ -91,13 +91,20 @@ pr() {
         -H "Authorization: Bearer $token" \
         -H "$data_type_header" \
         -d @temp_pr.json \
+        -s \
         "$url"
     )
 
     rm -f temp_pr.json
 
     pr_url=$(echo "$response" | jq -r '.html_url')
-    echo $pr_url
+    echo "Opening: $pr_url"
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        xdg-open "$pr_url"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        open "$pr_url"
+    fi
 
 
 }
