@@ -5,7 +5,20 @@
   "bin": {
     "fast-pr": "./src/fast-pr.sh"
   },
-  "keywords": ["automation", "bash scripts", "pull requests"],
+  "keywords": [
+    "automation",
+    "bash scripts",
+    "pull requests"
+  ],
   "author": "Danny Brown <dannybrown37@gmail.com> (https://github.com/dannybrown37)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+}
 }
