@@ -2,15 +2,10 @@
 
 
 # Opens a pull request from current branch to default branch in repo
-# Works with GitHub and enterprise Bitbucket
-
-# To install, update your PATH in your .bashrc file, then source it:
-#   export PATH="$HOME/path/to/script_dir:$PATH"
-#   source ~/.bashrc
-
-# To use, enter your BITBUCKET_TOKEN and BITBUCKET_BASE_URL in your
-# environment, then just enter `pr` after pushing a branch up.
-
+# Works with:
+#   GitHub
+#   Bitbucket (enterprise)
+#   ...
 
 pr() {
 
