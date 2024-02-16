@@ -1,0 +1,11 @@
+{
+  "name": "fast-pr",
+  "version": "0.0.1",
+  "description": "Open a fast PR from your command line",
+  "bin": {
+    "fast-pr": "./src/fast-pr.sh"
+  },
+  "keywords": ["automation", "bash scripts", "pull requests"],
+  "author": "Danny Brown <dannybrown37@gmail.com> (https://github.com/dannybrown37)",
+  "license": "MIT"
+}
