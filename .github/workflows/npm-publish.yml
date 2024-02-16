@@ -6,25 +6,30 @@ on:
       - main
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+    - run: npm ci
+    - run: npm test
 
   version-bump:
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    needs: build
     runs-on: ubuntu-latest
-    name: "Bump version and create changelog with commitizen"
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
-          fetch-depth: 0
-      - id: cz
-        name: Create bump and changelog
-        uses: commitizen-tools/commitizen-action@master
-        with:
-          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      - name: Print Version
-        run: echo "Bumped to version ${{ steps.cz.outputs.version }}"
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+    - run: npm ci
+    - run: npm install --save-dev standard-version
+    - run: npx standard-version
+    - run: git push --follow-tags origin main
 
   publish-npm:
     needs: version-bump
@@ -36,9 +41,6 @@ jobs:
         node-version: '18'
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
-      env:
-        NODE_ENV:  development
-    - run: npx cz test
     - run: npm publish
       env:
-        NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
