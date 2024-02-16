@@ -28,6 +28,8 @@ jobs:
         node-version: '20'
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
+    - run: git config --global user.email "dannybrown37@gmail.com"
+    - run: git config --global user.name "Danny Brown"
     - run: npm install --save-dev standard-version
     - run: npx standard-version
     - run: git push --follow-tags origin main
