@@ -181,7 +181,7 @@ pr() {
 
             response=$(
                 curl -X PATCH \
-                    -H "Authorization: Bearer $token" \
+                    -H "$token_header" \
                     -H "$data_type_header" \
                     -d @temp_patch.json \
                     -s \
