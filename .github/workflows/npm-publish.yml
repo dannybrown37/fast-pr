@@ -33,7 +33,7 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
     - run: git config --global user.email "dannybrown37@gmail.com"
-    - run: git config --global user.name "Danny Brown"
+    - run: git config --global user.name "Danny Brown (CI)"
     - run: npm install --save-dev standard-version
     - run: npx standard-version
     - run: git remote set-url origin https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/dannybrown37/fast-pr.git
@@ -45,6 +45,11 @@ jobs:
     needs: version-bump
     runs-on: ubuntu-latest
     steps:
+    - name: Wait for version-bump job to finish
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          script: while [[ "$(jobs)" =~ "version-bump" ]]; do sleep 1; done
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
