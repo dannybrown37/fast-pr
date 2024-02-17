@@ -124,7 +124,7 @@ pr() {
     elif [ $repo_home = "github" ]; then
 
         # In GitHub, an existing PR will be rejected with an error.
-        # Update the description with a follow-up patch request.
+        # Just update the description with a follow-up patch request.
         error_message=$(jq -r '.errors[0].message' <<< "$response")
         if [[ $error_message =~ ^A\ pull\ request\ already\ exists\ for\ ([^:]+):([^\.]+)\. ]]; then
             user_name="${BASH_REMATCH[1]}"
@@ -137,11 +137,10 @@ pr() {
 
             pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
 
-            curl -X PATCH
+            curl -X PATCH \
                 -H "Authorization: Bearer $token" \
                 -H "$data_type_header" \
                 -d @temp_patch.json \
-                -s \
                 "$pr_url"
 
             rm -f temp_patch.json
@@ -159,7 +158,7 @@ pr() {
     MINGW*)   open='start';;
     MSYS*)    open='start';;
     CYGWIN*)  open='cygstart';;
-    *)        # Try to detect WSL (Windows Subsystem for Linux)
+    *)  # Try to detect WSL (Windows Subsystem for Linux)
         if uname -r | grep -q -i microsoft; then
             open='powershell.exe -NoProfile Start'
         else
