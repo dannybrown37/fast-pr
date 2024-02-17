@@ -83,8 +83,6 @@ pr() {
             url="$BITBUCKET_BASE_URL/rest/api/1.0/projects/$repo_parent/repos/$repo_name/pull-requests"
         fi
 
-        echo "$json_content" > temp_pr.json
-
         data_type_header="Content-Type: application/json"
         token=$BITBUCKET_TOKEN
 
@@ -96,7 +94,6 @@ pr() {
             \"head\": \"$current_branch\",
             \"base\": \"$default_branch\"
         }"
-        echo "$json_content" > temp_pr.json
 
         url="https://api.github.com/repos/$repo_parent/$repo_name/pulls"
 
@@ -104,6 +101,8 @@ pr() {
         token=$GITHUB_TOKEN
 
     fi
+
+    echo "$json_content" > temp_pr.json
 
     response=$(
         curl -X POST \
@@ -113,12 +112,16 @@ pr() {
         -s \
         "$url"
     )
-
     rm -f temp_pr.json
+
     if [ $repo_home = "bitbucket" ]; then
+
+        # In Bitbucket, an existing PR will simply be updated and not error out
         pr_url=$(echo "$response" | jq -r '.links.html.href')
+
     elif [ $repo_home = "github" ]; then
 
+        # In GitHub, an existing PR will be rejected with an error.
         # Handle an error where the PR already exists
         error_message=$(jq -r '.errors[0].message' <<< "$response")
         if [[ $error_message =~ ^A\ pull\ request\ already\ exists\ for\ ([^:]+):([^\.]+)\. ]]; then
@@ -130,6 +133,7 @@ pr() {
             echo "Please manually update or delete the PR and run fast-pr again."
             pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
         else
+            echo "PR opened successfully!"
             pr_url=$(echo "$response" | jq -r '.html_url')
         fi
     fi
