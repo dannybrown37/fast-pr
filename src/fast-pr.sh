@@ -152,9 +152,39 @@ pr() {
 
     elif [ $repo_host = "gitlab" ]; then
 
-        pr_url=$(echo "$response" | jq -r '.web_url')
+        error_message=$(jq -r '.message[0]' <<< "$response")
+        if [[ $error_message =~ ^Another\ open\ merge\ request\ already\ exists\ for\ this\ source\ branch:\ ([^\.]+) ]]; then
+            existing_mr_number=${BASH_REMATCH[1]#\!}
 
-        # TODO: patch PR description on error
+            gitlab_patch_json_content="{
+                \"description\": \"$pr_description\"
+            }"
+            echo "$gitlab_patch_json_content" > temp_patch.json
+
+            # Construct the API URL for the update
+            api_url="https://gitlab.com/api/v4/projects/$repo_parent%2F$repo_name/merge_requests/$existing_mr_number"
+
+            echo $api_url
+            # Send the PUT request to update the description
+            response=$(
+                curl -X PUT \
+                    -H "$token_header" \
+                    -H "$data_type_header" \
+                    -d @temp_patch.json \
+                    -s \
+                    "$api_url"
+            )
+
+            rm -f temp_patch.json
+
+            pr_url=$(echo "$response" | jq -r '.web_url')
+            echo "This merge request already exists, but the description has been updated."
+
+
+        else
+            echo "Successfully opened merge request!"
+            pr_url=$(echo "$response" | jq -r '.web_url')
+        fi
 
     elif [ $repo_host = "github" ]; then
 
@@ -165,10 +195,10 @@ pr() {
             user_name="${BASH_REMATCH[1]}"
             branch_name="${BASH_REMATCH[2]}"
 
-            json_content="{
+            github_patch_json_content="{
                 \"body\": \"$pr_description\"
             }"
-            echo "$json_content" > temp_patch.json
+            echo "$github_patch_json_content" > temp_patch.json
 
             pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
 
