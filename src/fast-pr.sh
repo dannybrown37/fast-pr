@@ -38,9 +38,9 @@ pr() {
     non_current_branches=$(git for-each-ref --format='%(refname)' refs/heads/ | grep -v "refs/heads/$current_branch")
     commit_messages=$(git log $current_branch --oneline --not $non_current_branches)
     readarray -t commit_messages <<< "$commit_messages"
-    commit_message="Commits in pull request:\n"
+    pr_description="Commits in pull request:\n"
     for message in "${commit_messages[@]}"; do
-        commit_message+="\n$message"
+        pr_description+="  \n  $message"
     done
     repo_name=$(basename "$(git rev-parse --show-toplevel)")
     repo_parent=$(git remote -v | grep push | cut -d'/' -f4)
@@ -50,9 +50,10 @@ pr() {
     if [ $repo_home = "bitbucket" ]; then
 
         if [[ -z $BITBUCKET_BASE_URL ]]; then
+            # Personal/cloud Bitbucket
             json_content="{
                 \"title\": \"$pull_request_title\",
-                \"description\": \"$commit_message\",
+                \"description\": \"$pr_description\",
                 \"source\": {
                     \"branch\": {
                         \"name\": \"$current_branch\"
@@ -66,9 +67,10 @@ pr() {
             }"
             url="https://api.bitbucket.org/2.0/repositories/$repo_parent/$repo_name/pullrequests"
         else
+            # Enterprise Bitbucket
             json_content="{
                 \"title\": \"$pull_request_title\",
-                \"description\": \"$commit_message\",
+                \"description\": \"$pr_description\",
                 \"fromRef\": {
                     \"id\": \"refs/heads/$current_branch\",
                     \"repository\": \"$repo_name\",
@@ -90,7 +92,7 @@ pr() {
 
         json_content="{
             \"title\": \"$pull_request_title\",
-            \"body\": \"$commit_message\",
+            \"body\": \"$pr_description\",
             \"head\": \"$current_branch\",
             \"base\": \"$default_branch\"
         }"
@@ -141,16 +143,16 @@ pr() {
     echo "Opening web browser to PR URL: $pr_url"
 
     # get open browser command
-    case $( uname -s ) in
+    case $(uname -s) in
     Darwin)   open='open';;
     MINGW*)   open='start';;
     MSYS*)    open='start';;
     CYGWIN*)  open='cygstart';;
     *)        # Try to detect WSL (Windows Subsystem for Linux)
         if uname -r | grep -q -i microsoft; then
-        open='powershell.exe -NoProfile Start'
+            open='powershell.exe -NoProfile Start'
         else
-        open='xdg-open'
+            open='xdg-open'
         fi;;
     esac
 
