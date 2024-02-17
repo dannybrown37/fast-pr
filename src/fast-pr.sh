@@ -108,11 +108,11 @@ pr() {
 
     response=$(
         curl -X POST \
-        -H "Authorization: Bearer $token" \
-        -H "$data_type_header" \
-        -d @temp_pr.json \
-        -s \
-        "$url"
+            -H "Authorization: Bearer $token" \
+            -H "$data_type_header" \
+            -d @temp_pr.json \
+            -s \
+            "$url"
     )
     rm -f temp_pr.json
 
@@ -124,16 +124,27 @@ pr() {
     elif [ $repo_home = "github" ]; then
 
         # In GitHub, an existing PR will be rejected with an error.
-        # Handle an error where the PR already exists
+        # Update the description with a follow-up patch request.
         error_message=$(jq -r '.errors[0].message' <<< "$response")
         if [[ $error_message =~ ^A\ pull\ request\ already\ exists\ for\ ([^:]+):([^\.]+)\. ]]; then
             user_name="${BASH_REMATCH[1]}"
             branch_name="${BASH_REMATCH[2]}"
             echo "This pull request already exists!"
-            echo "Pushing to the repo should update the commits in the PR."
-            echo -e "\nNB: The PR title and description will not be updated."
-            echo "Please manually update or delete the PR and run fast-pr again."
+            json_content="{
+                \"body\": \"$pr_description\"
+            }"
+            echo "$json_content" > temp_patch.json
+
             pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
+
+            curl -X PATCH
+                -H "Authorization: Bearer $token" \
+                -H "$data_type_header" \
+                -d @temp_patch.json \
+                -s \
+                "$pr_url"
+
+            rm -f temp_patch.json
         else
             echo "PR opened successfully!"
             pr_url=$(echo "$response" | jq -r '.html_url')
