@@ -46,10 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Wait for version-bump job to finish
-      uses: actions/github-script@v5
-      with:
-        github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        script: while [[ "$(jobs)" =~ "version-bump" ]]; do sleep 1; done
+      run: sleep 10s
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
