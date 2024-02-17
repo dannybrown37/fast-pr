@@ -30,7 +30,7 @@ pr() {
             return
         fi
     else
-        echo "Error: Repo's remote URL is not yet supported. Add it or stick with GitHub or Bitbucket."
+        echo "Error: Repo's remote URL is not yet supported. Add it or stick with GitHub, GitLab, or Bitbucket."
         git remote -v
         return
     fi
@@ -48,15 +48,13 @@ pr() {
     done
     repo_name=$(basename "$(git rev-parse --show-toplevel)")
 
-    # Get repo_parent; works with HTTPS and SSH
+    # Get repo_parent (i.e., user or project); works with HTTPS and SSH
     remote_url=$(git remote get-url origin)
     if [[ $remote_url == https://* ]]; then
         repo_parent=$(echo $remote_url | cut -d'/' -f4)
     elif [[ $remote_url == git@* ]]; then
         repo_parent=$(echo $remote_url | cut -d':' -f2 | cut -d'/' -f1)
     fi
-
-
 
     pull_request_title="$current_branch -> $default_branch"
 
