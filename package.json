@@ -15,8 +15,5 @@
   "license": "MIT",
   "scripts": {
     "test": "echo \"No test specified\""
-  },
-  "devDependencies": {
-    "standard-version": "^9.5.0"
   }
 }

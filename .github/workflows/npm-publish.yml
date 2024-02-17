@@ -6,20 +6,8 @@ on:
       - main
 
 jobs:
-  # TODO -- add tests to build
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - uses: actions/setup-node@v2
-  #     with:
-  #       node-version: '20'
-  #       registry-url: 'https://registry.npmjs.org'
-  #   - run: npm ci
-  #   - run: npm test
 
   version-bump:
-    # needs: build
     if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
     runs-on: ubuntu-latest
     steps:
