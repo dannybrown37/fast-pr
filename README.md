@@ -26,16 +26,23 @@ also set your base URL (ending in `.com` or whatever suffix your URL uses).
 
     fast-pr
 
-That's it! Assuming you are in a Git repo, this will:
+That's it! Assuming you are in a Git repo, `fast-pr` will:
 
-1. Get your current branch
-2. Get the repo's default branch
-3. Create a pull request from the current branch to the default branch with:
+1. Create a pull request from the current branch to the default branch with:
+
     a. A title including both branch names
-    b. A commit message that includes one commit hash and message per line.
-4. Use your default web browser to open the URL of the new pull request.
+    b. A PR description message that includes one commit hash and message per line.
+
+2. Use your default web browser to open the URL of the newly opened pull request.
 
 ## Options
 
-None at this time! The beauty of this project is its simplicity. Need a PR?
-Just use `fast-pr`.
+None at this time! The beauty of this project is its simplicity.
+Need a quick and basic PR? Just use `fast-pr`.
+
+## Repository Host Compatibility
+
+`fast-pr` at this time works with:
+
+* GitHub (personal)
+* Bitbucket (personal & enterprise)
