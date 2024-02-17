@@ -153,7 +153,7 @@ pr() {
             )
 
             rm -f temp_patch.json
-            echo "This pull request already exists, but the description has been updated."
+            echo "This PR already exists, but the description has been updated."
         else
             echo "PR opened successfully!"
             pr_url=$(echo "$response" | jq -r '.html_url')
