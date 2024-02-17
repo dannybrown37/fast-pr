@@ -1,6 +1,6 @@
 {
   "name": "fast-pr",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Open a fast PR from your terminal",
   "bin": {
     "fast-pr": "./src/fast-pr.sh"
@@ -15,5 +15,8 @@
   "license": "MIT",
   "scripts": {
     "test": "echo \"No test specified\""
+  },
+  "devDependencies": {
+    "standard-version": "^9.5.0"
   }
 }
