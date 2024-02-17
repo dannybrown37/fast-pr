@@ -22,6 +22,13 @@ pr() {
             echo "export GITHUB_TOKEN=efgh"
             return
         fi
+    elif git remote -v | grep -q "gitlab"; then
+        repo_host="gitlab"
+        if [[ -z $GITLAB_TOKEN ]]; then
+            echo "Error: You must set your GITLAB_TOKEN in the environment"
+            echo "export GITLAB_TOKEN=ijkl"
+            return
+        fi
     else
         echo "Error: Repo's remote URL is not yet supported. Add it or stick with GitHub or Bitbucket."
         git remote -v
@@ -40,9 +47,16 @@ pr() {
         pr_description+="  \n  $message"
     done
     repo_name=$(basename "$(git rev-parse --show-toplevel)")
-    repo_parent=$(git remote -v | grep push | cut -d'/' -f4)
 
-    # Create PR content
+    # Get repo_parent; works with HTTPS and SSH
+    remote_url=$(git remote get-url origin)
+    if [[ $remote_url == https://* ]]; then
+        repo_parent=$(echo $remote_url | cut -d'/' -f4)
+    elif [[ $remote_url == git@* ]]; then
+        repo_parent=$(echo $remote_url | cut -d':' -f2 | cut -d'/' -f1)
+    fi
+
+
 
     pull_request_title="$current_branch -> $default_branch"
 
@@ -85,7 +99,7 @@ pr() {
         fi
 
         data_type_header="Content-Type: application/json"
-        token=$BITBUCKET_TOKEN
+        token_header="Authorization: Bearer $BITBUCKET_TOKEN"
 
     elif [ $repo_host = "github" ]; then
 
@@ -99,26 +113,44 @@ pr() {
         url="https://api.github.com/repos/$repo_parent/$repo_name/pulls"
 
         data_type_header="Accept: application/vnd.github.v3+json"
-        token=$GITHUB_TOKEN
+        token_header="Authorization: Bearer $GITHUB_TOKEN"
 
+    elif [ $repo_host = "gitlab" ]; then
+
+        json_content="{
+            \"title\": \"$pull_request_title\",
+            \"description\": \"$pr_description\",
+            \"source_branch\": \"$current_branch\",
+            \"target_branch\": \"$default_branch\"
+        }"
+
+        url="https://gitlab.com/api/v4/projects/$repo_parent%2F$repo_name/merge_requests"
+
+        data_type_header="Content-Type: application/json"
+        token_header="Private-Token: $GITLAB_TOKEN"
     fi
 
     echo "$json_content" > temp_pr.json
 
     response=$(
         curl -X POST \
-            -H "Authorization: Bearer $token" \
+            -H "$token_header" \
             -H "$data_type_header" \
             -d @temp_pr.json \
             -s \
             "$url"
     )
+
     rm -f temp_pr.json
 
     if [ $repo_host = "bitbucket" ]; then
 
         # In Bitbucket, an existing PR will simply be updated and not error out
         pr_url=$(echo "$response" | jq -r '.links.html.href')
+
+    elif [ $repo_host = "gitlab" ]; then
+
+        pr_url=$(echo "$response" | jq -r '.web_url')
 
     elif [ $repo_host = "github" ]; then
 
