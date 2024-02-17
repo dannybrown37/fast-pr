@@ -114,16 +114,27 @@ pr() {
         "$url"
     )
 
-    echo $response
-
     rm -f temp_pr.json
     if [ $repo_home = "bitbucket" ]; then
         pr_url=$(echo "$response" | jq -r '.links.html.href')
     elif [ $repo_home = "github" ]; then
-        pr_url=$(echo "$response" | jq -r '.html_url')
+
+        # Handle an error where the PR already exists
+        error_message=$(jq -r '.errors[0].message' <<< "$response")
+        if [[ $error_message =~ ^A\ pull\ request\ already\ exists\ for\ ([^:]+):([^\.]+)\. ]]; then
+            user_name="${BASH_REMATCH[1]}"
+            branch_name="${BASH_REMATCH[2]}"
+            echo "This pull request already exists!"
+            echo "Pushing to the repo should update the commits in the PR."
+            echo -e "\nNB: The PR title and description will not be updated."
+            echo "Please manually update or delete the PR and run fast-pr again."
+            pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
+        else
+            pr_url=$(echo "$response" | jq -r '.html_url')
+        fi
     fi
 
-    echo "Opening: $pr_url"
+    echo "Opening web browser to PR URL: $pr_url"
 
     # get open browser command
     case $( uname -s ) in
