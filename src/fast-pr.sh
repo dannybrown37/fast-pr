@@ -4,7 +4,7 @@
 # Opens a pull request from current branch to default branch in repo
 # Works with:
 #   GitHub
-#   Bitbucket (enterprise)
+#   Bitbucket (personal & enterprise)
 #   ...
 
 pr() {
