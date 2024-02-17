@@ -145,12 +145,16 @@ pr() {
 
     if [ $repo_host = "bitbucket" ]; then
 
-        # In Bitbucket, an existing PR will simply be updated and not error out
+        # In personal/cloud Bitbucket, an existing PR will be updated and not error out
         pr_url=$(echo "$response" | jq -r '.links.html.href')
+
+        # TODO: handle error on enterprise Bitbucket
 
     elif [ $repo_host = "gitlab" ]; then
 
         pr_url=$(echo "$response" | jq -r '.web_url')
+
+        # TODO: patch PR description on error
 
     elif [ $repo_host = "github" ]; then
 
