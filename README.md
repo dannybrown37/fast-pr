@@ -15,6 +15,7 @@ You should add personal access tokens for the accounts in question to your
 environment like so:
 
     export GITHUB_TOKEN=<value>
+    export GITLAB_TOKEN=<value>
     export BITBUCKET_TOKEN=<value>
 
 If you are using enterprise Bitbucket (i.e., not bitbucket.org), you should
@@ -26,7 +27,7 @@ also set your base URL (ending in `.com` or whatever suffix your URL uses).
 
     fast-pr
 
-That's it! Assuming you are in a Git repo, `fast-pr` will:
+That's it! Assuming you are in a Git repo with a valid remote, `fast-pr` will:
 
 1. Create or update an existing pull request from the current branch to the default branch with:
 
@@ -46,4 +47,5 @@ Need a quick and basic PR? Just use `fast-pr`.
 `fast-pr` works with:
 
 * GitHub (personal)
+* GitLab (personal)
 * Bitbucket (personal & enterprise)

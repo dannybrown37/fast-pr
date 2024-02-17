@@ -22,8 +22,15 @@ pr() {
             echo "export GITHUB_TOKEN=efgh"
             return
         fi
+    elif git remote -v | grep -q "gitlab"; then
+        repo_host="gitlab"
+        if [[ -z $GITLAB_TOKEN ]]; then
+            echo "Error: You must set your GITLAB_TOKEN in the environment"
+            echo "export GITLAB_TOKEN=ijkl"
+            return
+        fi
     else
-        echo "Error: Repo's remote URL is not yet supported. Add it or stick with GitHub or Bitbucket."
+        echo "Error: Repo's remote URL is not yet supported. Add it or stick with GitHub, GitLab, or Bitbucket."
         git remote -v
         return
     fi
@@ -40,9 +47,14 @@ pr() {
         pr_description+="  \n  $message"
     done
     repo_name=$(basename "$(git rev-parse --show-toplevel)")
-    repo_parent=$(git remote -v | grep push | cut -d'/' -f4)
 
-    # Create PR content
+    # Get repo_parent (i.e., user or project); works with HTTPS and SSH
+    remote_url=$(git remote get-url origin)
+    if [[ $remote_url == https://* ]]; then
+        repo_parent=$(echo $remote_url | cut -d'/' -f4)
+    elif [[ $remote_url == git@* ]]; then
+        repo_parent=$(echo $remote_url | cut -d':' -f2 | cut -d'/' -f1)
+    fi
 
     pull_request_title="$current_branch -> $default_branch"
 
@@ -85,7 +97,7 @@ pr() {
         fi
 
         data_type_header="Content-Type: application/json"
-        token=$BITBUCKET_TOKEN
+        token_header="Authorization: Bearer $BITBUCKET_TOKEN"
 
     elif [ $repo_host = "github" ]; then
 
@@ -99,26 +111,78 @@ pr() {
         url="https://api.github.com/repos/$repo_parent/$repo_name/pulls"
 
         data_type_header="Accept: application/vnd.github.v3+json"
-        token=$GITHUB_TOKEN
+        token_header="Authorization: Bearer $GITHUB_TOKEN"
 
+    elif [ $repo_host = "gitlab" ]; then
+
+        json_content="{
+            \"title\": \"$pull_request_title\",
+            \"description\": \"$pr_description\",
+            \"source_branch\": \"$current_branch\",
+            \"target_branch\": \"$default_branch\"
+        }"
+
+        url="https://gitlab.com/api/v4/projects/$repo_parent%2F$repo_name/merge_requests"
+
+        data_type_header="Content-Type: application/json"
+        token_header="Private-Token: $GITLAB_TOKEN"
     fi
 
     echo "$json_content" > temp_pr.json
 
     response=$(
         curl -X POST \
-            -H "Authorization: Bearer $token" \
+            -H "$token_header" \
             -H "$data_type_header" \
             -d @temp_pr.json \
             -s \
             "$url"
     )
+
     rm -f temp_pr.json
 
     if [ $repo_host = "bitbucket" ]; then
 
-        # In Bitbucket, an existing PR will simply be updated and not error out
+        # In personal/cloud Bitbucket, an existing PR will be updated and not error out
         pr_url=$(echo "$response" | jq -r '.links.html.href')
+
+        # TODO: handle error on enterprise Bitbucket
+
+    elif [ $repo_host = "gitlab" ]; then
+
+        error_message=$(jq -r '.message[0]' <<< "$response")
+        if [[ $error_message =~ ^Another\ open\ merge\ request\ already\ exists\ for\ this\ source\ branch:\ ([^\.]+) ]]; then
+            existing_mr_number=${BASH_REMATCH[1]#\!}
+
+            gitlab_patch_json_content="{
+                \"description\": \"$pr_description\"
+            }"
+            echo "$gitlab_patch_json_content" > temp_patch.json
+
+            # Construct the API URL for the update
+            api_url="https://gitlab.com/api/v4/projects/$repo_parent%2F$repo_name/merge_requests/$existing_mr_number"
+
+            echo $api_url
+            # Send the PUT request to update the description
+            response=$(
+                curl -X PUT \
+                    -H "$token_header" \
+                    -H "$data_type_header" \
+                    -d @temp_patch.json \
+                    -s \
+                    "$api_url"
+            )
+
+            rm -f temp_patch.json
+
+            pr_url=$(echo "$response" | jq -r '.web_url')
+            echo "This merge request already exists, but the description has been updated."
+
+
+        else
+            echo "Successfully opened merge request!"
+            pr_url=$(echo "$response" | jq -r '.web_url')
+        fi
 
     elif [ $repo_host = "github" ]; then
 
@@ -129,10 +193,10 @@ pr() {
             user_name="${BASH_REMATCH[1]}"
             branch_name="${BASH_REMATCH[2]}"
 
-            json_content="{
+            github_patch_json_content="{
                 \"body\": \"$pr_description\"
             }"
-            echo "$json_content" > temp_patch.json
+            echo "$github_patch_json_content" > temp_patch.json
 
             pr_url="https://github.com/$user_name/$repo_name/pull/$branch_name/"
 
@@ -145,7 +209,7 @@ pr() {
 
             response=$(
                 curl -X PATCH \
-                    -H "Authorization: Bearer $token" \
+                    -H "$token_header" \
                     -H "$data_type_header" \
                     -d @temp_patch.json \
                     -s \
