@@ -262,7 +262,7 @@ pr() {
 for arg in "$@"; do
     if [ "$arg" == "--version" ] || [ "$arg" == "-v" ]
     then
-        version=$(jq -r .version package.json)
+        version=$(jq -r .version $(npm list -g | head -1)/node_modules/fast-pr/package.json)
         echo "fast-pr v$version"
         latest=$(curl -s "https://registry.npmjs.org/fast-pr" | jq -r '.["dist-tags"].latest')
         if [ "$version" != "$latest" ]; then
