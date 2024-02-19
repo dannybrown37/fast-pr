@@ -42,6 +42,8 @@ That's it! Assuming you are in a Git repo with a valid remote, `fast-pr` will:
 None at this time! The beauty of this project is its simplicity.
 Need a quick and basic PR? Just use `fast-pr`.
 
+(One small option: you can check the version with `--version` or `-v`)
+
 ## Repository Host Compatibility
 
 `fast-pr` works with:

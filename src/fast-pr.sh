@@ -3,7 +3,6 @@
 
 # Opens a pull request from current branch to default branch in repo
 
-
 pr() {
 
     if git remote -v | grep -q "bitbucket"; then
@@ -243,5 +242,20 @@ pr() {
     ${BROWSER:-$open} "$pr_url"
 
 }
+
+for arg in "$@"; do
+    if [ "$arg" == "--version" ] || [ "$arg" == "-v" ]
+    then
+        version=$(jq -r .version package.json)
+        echo "fast-pr v$version"
+        latest=$(curl -s "https://registry.npmjs.org/fast-pr" | jq -r '.["dist-tags"].latest')
+        if [ "$version" != "$latest" ]; then
+            echo "fast-pr v$latest is available"
+            echo "Update with \"sudo npm update --global fast-pr\""
+        fi
+        exit 0
+    fi
+done
+
 
 pr
