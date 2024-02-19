@@ -53,6 +53,12 @@ pr() {
         repo_parent=$(echo $remote_url | cut -d'/' -f4)
     elif [[ $remote_url == git@* ]]; then
         repo_parent=$(echo $remote_url | cut -d':' -f2 | cut -d'/' -f1)
+    elif [[ $remote_url == ssh://* ]]; then
+        repo_parent=$(echo $remote_url | cut -d'/' -f4)
+    else
+        echo -e "ERROR: no username/project/repo owner detected in URL:\n\t$remote_url"
+        echo "It probably has an unexpected format, please raise a GitHub issue."
+        return
     fi
 
     pull_request_title="$current_branch -> $default_branch"
@@ -142,10 +148,20 @@ pr() {
 
     if [ $repo_host = "bitbucket" ]; then
 
-        # In personal/cloud Bitbucket, an existing PR will be updated and not error out
-        pr_url=$(echo "$response" | jq -r '.links.html.href')
+        # In enterprise Bitbucket, duplicate PRs will error and can't be updated via API
+        error_message=$(jq -r '.errors[0].message' <<< "$response")
+        duplicate="Only one pull request may be open for a given source and target branch"
+        if [[ $error_message == $duplicate ]]; then
+            echo $duplicate
+            echo "Bitbucket API v1 does not support updating pull request descriptions."
+            echo "Please update manually or delete the PR and reopen."
+            pr_url=$(jq '.errors[0].existingPullRequest.links.self[0].href' <<< "$response")
+        else
+            # In personal/cloud Bitbucket, an existing PR will be updated and not error out
+            pr_url=$(echo "$response" | jq -r '.links.html.href')
+        fi
 
-        # TODO: handle error on enterprise Bitbucket
+
 
     elif [ $repo_host = "gitlab" ]; then
 
