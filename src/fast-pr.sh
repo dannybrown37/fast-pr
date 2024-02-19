@@ -157,8 +157,13 @@ pr() {
             echo "Please update manually or delete the PR and reopen."
             pr_url=$(jq '.errors[0].existingPullRequest.links.self[0].href' <<< "$response")
         else
-            # In personal/cloud Bitbucket, an existing PR will be updated and not error out
-            pr_url=$(echo "$response" | jq -r '.links.html.href')
+            if [[ -z $BITBUCKET_BASE_URL ]]; then
+                # In personal/cloud Bitbucket, an existing PR will be updated and not error out
+                pr_url=$(echo "$response" | jq -r '.links.html.href')
+            else
+                # enterprise Bitbucket path is different on success
+                pr_url=$(echo "$response" | jq -r '.links.self[0].href')
+            fi
         fi
 
 
