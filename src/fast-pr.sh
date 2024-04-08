@@ -144,6 +144,12 @@ pr() {
             "$url"
     )
 
+    if [[ $response == *"\"errors\""* ]]; then
+        echo "fast-pr was unsuccessful. Error(s) encountered with API call:"
+        echo "$response" | jq
+        return
+    fi
+
     rm -f temp_pr.json
 
     if [ $repo_host = "bitbucket" ]; then
