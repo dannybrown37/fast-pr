@@ -39,7 +39,7 @@ pr() {
 
     # Get commit hashes and messages for current branch, construct PR description
     non_current_branches=$(git for-each-ref --format='%(refname)' refs/heads/ | grep -v "refs/heads/$current_branch")
-    commit_messages=$(git log $current_branch --oneline --not $non_current_branches)
+    commit_messages=$(git log "$current_branch" --oneline --not "$non_current_branches")
     readarray -t commit_messages <<< "$commit_messages"
     pr_description="Commits in pull request:\n"
     for message in "${commit_messages[@]}"; do
@@ -49,12 +49,12 @@ pr() {
 
     # Get repo_parent (i.e., user or project); works with HTTPS and SSH
     remote_url=$(git remote get-url origin)
-    if [[ $remote_url == https://* ]]; then
-        repo_parent=$(echo $remote_url | cut -d'/' -f4)
-    elif [[ $remote_url == git@* ]]; then
-        repo_parent=$(echo $remote_url | cut -d':' -f2 | cut -d'/' -f1)
-    elif [[ $remote_url == ssh://* ]]; then
-        repo_parent=$(echo $remote_url | cut -d'/' -f4)
+    if [[ "$remote_url" == https://* ]]; then
+        repo_parent=$(echo "$remote_url" | cut -d'/' -f4)
+    elif [[ "$remote_url" == git@* ]]; then
+        repo_parent=$(echo "$remote_url" | cut -d':' -f2 | cut -d'/' -f1)
+    elif [[ "$remote_url" == ssh://* ]]; then
+        repo_parent=$(echo "$remote_url" | cut -d'/' -f4)
     else
         echo -e "ERROR: no username/project/repo owner detected in URL:\n\t$remote_url"
         echo "It probably has an unexpected format, please raise a GitHub issue."
@@ -63,7 +63,7 @@ pr() {
 
     pull_request_title="$current_branch -> $default_branch"
 
-    if [ $repo_host = "bitbucket" ]; then
+    if [ "$repo_host" = "bitbucket" ]; then
 
         if [[ -z $BITBUCKET_BASE_URL ]]; then
             # Personal/cloud Bitbucket
@@ -104,7 +104,7 @@ pr() {
         data_type_header="Content-Type: application/json"
         token_header="Authorization: Bearer $BITBUCKET_TOKEN"
 
-    elif [ $repo_host = "github" ]; then
+    elif [ "$repo_host" = "github" ]; then
 
         json_content="{
             \"title\": \"$pull_request_title\",
@@ -118,7 +118,7 @@ pr() {
         data_type_header="Accept: application/vnd.github.v3+json"
         token_header="Authorization: Bearer $GITHUB_TOKEN"
 
-    elif [ $repo_host = "gitlab" ]; then
+    elif [ "$repo_host" = "gitlab" ]; then
 
         json_content="{
             \"title\": \"$pull_request_title\",
@@ -152,13 +152,13 @@ pr() {
 
     rm -f temp_pr.json
 
-    if [ $repo_host = "bitbucket" ]; then
+    if [ "$repo_host" = "bitbucket" ]; then
 
         # In enterprise Bitbucket, duplicate PRs will error and can't be updated via API
         error_message=$(jq -r '.errors[0].message' <<< "$response")
         duplicate="Only one pull request may be open for a given source and target branch"
-        if [[ $error_message == $duplicate ]]; then
-            echo $duplicate
+        if [[ $error_message == "$duplicate" ]]; then
+            echo "$duplicate"
             echo "Bitbucket API v1 does not support updating pull request descriptions."
             echo "Please update manually or delete the PR and reopen."
             pr_url=$(jq '.errors[0].existingPullRequest.links.self[0].href' <<< "$response")
@@ -174,7 +174,7 @@ pr() {
 
 
 
-    elif [ $repo_host = "gitlab" ]; then
+    elif [ "$repo_host" = "gitlab" ]; then
 
         error_message=$(jq -r '.message[0]' <<< "$response")
         if [[ $error_message =~ ^Another\ open\ merge\ request\ already\ exists\ for\ this\ source\ branch:\ ([^\.]+) ]]; then
@@ -188,7 +188,6 @@ pr() {
             # Construct the API URL for the update
             api_url="https://gitlab.com/api/v4/projects/$repo_parent%2F$repo_name/merge_requests/$existing_mr_number"
 
-            echo $api_url
             # Send the PUT request to update the description
             response=$(
                 curl -X PUT \
@@ -210,7 +209,7 @@ pr() {
             pr_url=$(echo "$response" | jq -r '.web_url')
         fi
 
-    elif [ $repo_host = "github" ]; then
+    elif [ "$repo_host" = "github" ]; then
 
         # In GitHub, an existing PR will be rejected with an error.
         # Just update the description with a follow-up patch request.
@@ -228,8 +227,8 @@ pr() {
 
             # the web UI URL with branch name will redirect to a URL with the
             # pull-request number, which is what we need for the API URL
-            redirected_url=$(curl -Ls -o /dev/null -w %{url_effective} $pr_url)
-            pull_number=$(basename $redirected_url)
+            redirected_url=$(curl -Ls -o /dev/null -w "%{url_effective}" "$pr_url")
+            pull_number=$(basename "$redirected_url")
 
             api_url="${url}/${pull_number}.patch"
 
@@ -273,14 +272,14 @@ pr() {
 for arg in "$@"; do
     if [ "$arg" == "--version" ] || [ "$arg" == "-v" ]
     then
-        version=$(jq -r .version $(npm list -g | head -1)/node_modules/fast-pr/package.json)
+        version=$(jq -r .version "$(npm list -g | head -1)"/node_modules/fast-pr/package.json)
         echo "fast-pr v$version"
         latest=$(curl -s "https://registry.npmjs.org/fast-pr" | jq -r '.["dist-tags"].latest')
         if [ "$version" != "$latest" ]; then
             echo "fast-pr v$latest is available"
             echo "Update with \"sudo npm update --global fast-pr\""
         fi
-        exit 0
+        re turn
     fi
 done
 
